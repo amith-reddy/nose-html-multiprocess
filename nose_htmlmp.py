@@ -13,4 +13,5 @@ MANAGER = multiprocessing.Manager()
 MP_ERRORLIST = MANAGER.list()
 MP_STATS = MANAGER.dict()
 
-class HtmlMp()
+class HtmlMp(object):
+    pass
