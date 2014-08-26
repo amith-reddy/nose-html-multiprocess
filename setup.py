@@ -2,17 +2,20 @@ import os
 
 from setuptools import setup, find_packages
 
-here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.md')).read()
-CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
+ROOT = os.path.abspath(os.path.dirname(__file__))
+
+README = open(os.path.join(ROOT, 'README.md')).read()
+CHANGES = open(os.path.join(ROOT, 'CHANGES.md')).read()
+
 
 requires = [
     'nose',
-    'Jinja2'
+    'Jinja2',
+    'nose-htmloutput'
 ]
 
 
-setup(name='nose_htmlmp',
+setup(name='nose-htmlmp',
       version='0.0.1',
       description='Html output plugin for nose supporting multiprocess',
       long_description=README + '\n\n' +  CHANGES,
@@ -28,10 +31,11 @@ setup(name='nose_htmlmp',
       author='Roy Klinger',
       author_email='roy@taykey.com',
       url='',
+      packages=find_packages(),
       keywords='nosetest html multiprocessing',
-      py_modules=['nose_htmlmp'],
+      # py_modules=['nose_htmlmp'],
       include_package_data=True,
-      zip_safe=True,
+      zip_safe=False,
       entry_points="""\
       [nose.plugins.0.10]
       htmlmp = nose_htmlmp:HtmlMp
