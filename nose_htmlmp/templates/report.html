@@ -92,6 +92,7 @@ section:target .test-details {
         </table>
     </section>
     <h1>Failure details</h1>
+    <div>
     {% for class, group in report.items() %}
         {% if group.stats.failures or group.stats.errors %}
             <section>
@@ -114,18 +115,20 @@ section:target .test-details {
             </section>
         {% endif %}
     {% endfor %}
-
+    </div>
     <h1>All tests</h1>
+    <div>
     {% for class, group in report.items() %}
     <section>
         <h2>{{ class }} ({{ group.stats.failures }} failures, {{ group.stats.errors }} errors)</h2>
         <ul>
             {% for test in group.tests %}
-                <li><a class="{% if test.failed %}failed" href="#{{ class }}:{{ test.name }}"{% else %}success"{% endif %}>{{ test.name }}</a></li>
+                <li><a class="{% if test.failed %}failed{% else %}success{% endif %}" href="#{{ class }}:{{ test.name }}">{{ test.name }}</a></li>
             {% endfor %}
         </ul>
     </section>
     {% endfor %}
+    </div>
 </body>
 <script>
     Array.prototype.forEach.call(document.querySelectorAll('h1, h2, h3, h4'), function(el) {
