@@ -1,16 +1,12 @@
 import multiprocessing
+import codecs
 import os
-from nose.plugins.base import Plugin
-
+import traceback
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
-
-import codecs
-
-import traceback
+from nose.plugins.base import Plugin
 from nose.exc import SkipTest
-
-from nose_htmloutput import Group, id_split, nice_classname, exc_message, TEST_ID
+from nose_htmloutput import Group, id_split, nice_classname, exc_message
 
 
 MANAGER = multiprocessing.Manager()
@@ -37,12 +33,21 @@ class HtmlMp(Plugin):
                  "Default is nosetests.html in the working directory "
                  "[NOSE_HTML_FILE]")
 
+        parser.add_option(
+            '--htmlmp-file-template', action='store',
+            dest='htmlmp_template', metavar="FILE",
+            default=env.get('NOSE_HTML_TEMPLATE_FILE',
+                            os.path.join(os.path.dirname(__file__), "templates", "report.html")),
+            help="Path to html template file in with jinja2 format."
+                 "Default is report.html in the lib sources"
+                 "[NOSE_HTML_TEMPLATE_FILE]")
+
     def configure(self, options, config):
         Plugin.configure(self, options, config)
         self.config = config
         if self.enabled:
             self.jinja = Environment(
-                loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')),
+                loader=FileSystemLoader(os.path.dirname(options.htmlmp_template)),
                 trim_blocks=True,
                 lstrip_blocks=True
             )
@@ -56,6 +61,7 @@ class HtmlMp(Plugin):
             self.errorlist = MP_ERRORLIST
             self.report_data = MP_REPROT
             self.report_file_name = options.htmlmp_file
+            self.report_template_filename = options.htmlmp_template
 
     def report(self, stream):
         self.report_file = codecs.open(self.report_file_name, 'w', self.encoding, 'replace')
@@ -66,7 +72,7 @@ class HtmlMp(Plugin):
             group.stats['total'] = sum(group.stats.values())
             self.report_data.update({name: group})
 
-        self.report_file.write(self.jinja.get_template('report.html').render(
+        self.report_file.write(self.jinja.get_template(os.path.basename(self.report_template_filename)).render(
             report=self.report_data,
             stats=self.stats,
         ))
@@ -77,6 +83,7 @@ class HtmlMp(Plugin):
 
     def addSuccess(self, test):
         name = id_split(test.id())
+        doc = test.test._testMethodDoc
         group = self.report_data.get(name[0], Group())
 
         self.stats['passes'] += 1
@@ -84,13 +91,14 @@ class HtmlMp(Plugin):
         group.tests.append({
             'name': name[-1],
             'failed': False,
+            'doc': doc
         })
         self.report_data.update({name[0]: group})
 
     def addError(self, test, err, capt=None):
         tb = ''.join(traceback.format_exception(*err))
         name = id_split(test.id())
-
+        doc = test.test._testMethodDoc
         group = self.report_data.get(name[0], Group())
 
         if issubclass(err[0], SkipTest):
@@ -103,9 +111,11 @@ class HtmlMp(Plugin):
             group.stats['errors'] += 1
         group.tests.append({
             'name': name[-1],
-            'failed': True,
+            'failed': False,
+            'error': True,
+            'doc': doc,
             'type': type,
-            'errtype': nice_classname(err[0]),
+            'error_type': nice_classname(err[0]),
             'message': exc_message(err),
             'tb': tb,
         })
@@ -114,7 +124,7 @@ class HtmlMp(Plugin):
     def addFailure(self, test, err, capt=None, tb_info=None):
         tb = ''.join(traceback.format_exception(*err))
         name = id_split(test.id())
-
+        doc = test.test._testMethodDoc
         group = self.report_data.get(name[0], Group())
 
         self.stats['failures'] += 1
@@ -122,7 +132,9 @@ class HtmlMp(Plugin):
         group.tests.append({
             'name': name[-1],
             'failed': True,
-            'errtype': nice_classname(err[0]),
+            'error': False,
+            'doc': doc,
+            'error_type': nice_classname(err[0]),
             'message': exc_message(err),
             'tb': tb,
         })
