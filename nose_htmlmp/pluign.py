@@ -38,13 +38,21 @@ class HtmlMp(Plugin):
             help="Path to html file to store the report in. "
                  "Default is nosetests.html in the working directory "
                  "[NOSE_HTML_FILE]")
+        parser.add_option(
+            '--htmlmp-report-template', action='store',
+            dest='htmlmp_template', metavar="FILE",
+            default=env.get('NOSE_HTML_TEMPLATE_FILE',
+                            os.path.join(os.path.dirname(__file__), "templates", "report.html")),
+            help="Path to html template file in with jinja2 format."
+                 "Default is report.html in the lib sources"
+                 "[NOSE_HTML_TEMPLATE_FILE]")
 
     def configure(self, options, config):
         Plugin.configure(self, options, config)
         self.config = config
         if self.enabled:
             self.jinja = Environment(
-                loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')),
+                loader=FileSystemLoader(os.path.join(os.path.dirname(options.htmlmp_template))),
                 trim_blocks=True,
                 lstrip_blocks=True
             )
@@ -58,6 +66,7 @@ class HtmlMp(Plugin):
             self.errorlist = MP_ERRORLIST
             self.report_data = MP_REPROT
             self.report_file_name = options.htmlmp_file
+            self.report_template_filename = options.htmlmp_template
 
     def report(self, stream):
         self.report_file = codecs.open(self.report_file_name, 'w', self.encoding, 'replace')
@@ -68,7 +77,7 @@ class HtmlMp(Plugin):
             group.stats['total'] = sum(group.stats.values())
             self.report_data.update({name: group})
 
-        self.report_file.write(self.jinja.get_template('report.html').render(
+        self.report_file.write(self.jinja.get_template(os.path.basename(self.report_template_filename)).render(
             report=self.report_data,
             stats=self.stats,
         ))
